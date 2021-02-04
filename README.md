@@ -18,14 +18,16 @@
 - [ ] Implementing the buiiltin functions:
   - [ ] export
   - [ ] history
-  - [ ] cd
+  - [/] cd
 ## Functions
-### int new_custom_process(char* command, char* parameters[])
-#### Parameters:
+### int **new_custom_process**(char\* command, char\* parameters[])
+**Parameters:**
  - **char\* command**: The custom command to execute
  - **char\* parameters[]**: The NULL terminated list of parameters to execute with the command
-#### Returns:
+
+**Returns:**
  - **1** on success
  - **0** on failure
-#### Notes:
+
+**Notes:**
  - This function returns failure if the command cannot be found. This is so that the new_process function can let the user know that they have not executed a recognized command, and exit the process normally. See the new_process function for more information.

@@ -4,42 +4,27 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
-
-#define BUFFERSIZE 1024
+#include <string.h>
+#include <limits.h>
+#include "myShellFuncs.h"
 
 int main (int argc, char *argv[]) {
-    pid_t childpid; // Child's process ID
-    int status = 0; // The Child's exit status
     char buffer[BUFFERSIZE];
-    char *parameters[10] = { "ls", "-l", NULL };
+    char *parameters[10];
+    char dir[PATH_MAX];
 
-    while(1) {
-    childpid = fork();
-    if (childpid >= 0) {
-        if (childpid == 0) {
-            // Getting user's command
-            char c;
-            int position = 0;
-            while (c != '\n' && c != EOF) {
-                c = getchar();
-                buffer[position] = c;
-                position++;
-            }
-            
-            // Replacing the \n with an EOF
-            buffer[--position] = '\0';
+    while (1) {
+        printf("%s> ", cur_dir(dir));
 
-            status = execvp(buffer, parameters);
+        fgets(buffer, BUFFERSIZE, stdin);
+        
+        parse_buffer(buffer, parameters);
+
+        if (strncmp(parameters[0], "exit", 4) != 0) {
+            new_process(parameters[0], parameters);
         } else {
-            waitpid(childpid, &status, 0);
-            printf("parent process stuff\n");
-            printf("child's exit code is %d\n", WEXITSTATUS(status));
+            printf("myShell terminating...\n\n[Process completed]\n");
+            exit(0);
         }
-    } else {
-        perror("fork");
-        exit(-1);
     }
-    }
-
-    exit(0);
 }

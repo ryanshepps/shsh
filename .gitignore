@@ -1,2 +1,4 @@
 Examples/
+.vscode/
 *.out
+*.o

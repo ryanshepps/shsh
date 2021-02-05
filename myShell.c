@@ -12,16 +12,21 @@ int main (int argc, char *argv[]) {
     char buffer[BUFFERSIZE];
     char *parameters[10];
     char dir[PATH_MAX];
+    char action;
+    int status;
 
     while (1) {
         printf("%s> ", cur_dir(dir));
 
         fgets(buffer, BUFFERSIZE, stdin);
         
-        parse_buffer(buffer, parameters);
+        action = parse_buffer(buffer, parameters);
 
         if (strncmp(parameters[0], "exit", 4) != 0) {
-            new_process(parameters[0], parameters);
+            int status = new_process(parameters[0], parameters, action);
+            if (status != 23) {
+                new_custom_process(parameters[0], parameters, action);
+            }
         } else {
             printf("myShell terminating...\n\n[Process completed]\n");
             exit(0);

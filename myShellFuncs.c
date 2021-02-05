@@ -8,23 +8,42 @@
 #include <limits.h>
 #include "myShellFuncs.h"
 
-void parse_buffer(char* buffer, char* parameters[]) {
+char parse_buffer(char* buffer, char* parameters[]) {
+    char return_val = ' ';
+
     int iterator = 0;
     char* token = strtok(buffer, " ");
     while (token != NULL) {
         parameters[iterator] = token;
         iterator++;
 
+        if (strcmp(token, ">") == 0) {
+            return_val = '>';
+        } else if (strcmp(token, "<") == 0) {
+            return_val = '<';
+        }
+
         token = strtok(NULL, " ");
     }
-
-    // Removes the trailing \m
+    
+    // Removes the trailing \n
     strtok(parameters[--iterator], "\n");
+
+    // Determines the return_val
+    if (strcmp(parameters[iterator], "&") == 0) {
+        return_val = '&';
+    } else if (strcmp(parameters[iterator], ">") == 0) {
+        return_val = '>';
+    } else if (strcmp(parameters[iterator], "<") == 0) {
+        return_val = '<';
+    }
     // Ends the parameter list with a trailing NULL pointer
     parameters[++iterator] = NULL;
+
+    return return_val;
 }
 
-void new_process(char* command, char* parameters[]) {
+int new_process(char* command, char* parameters[], char action) {
     pid_t childpid;
     int status;
 
@@ -34,9 +53,6 @@ void new_process(char* command, char* parameters[]) {
         // Child process
         if (childpid == 0) {
             status = execvp(command, parameters);
-            if (!new_custom_process(command, parameters)) {
-                printf("Not a command!\n");
-            }
             exit(status);
         } else {
             waitpid(childpid, &status, 0);
@@ -60,22 +76,26 @@ char* cur_dir(char dir[]) {
     return dir;
 }
 
-int new_custom_process(char* command, char* parameters[]) {
-    if (strcmp(command, "cd") == 0) {
-        return command_cd(parameters[1]);
+int new_custom_process(char* command, char* parameters[], char action) {
+    if (action == '>') {
+        command_redirect_to(command, parameters);
     }
 
     return 0;
 }
 
-int command_cd(char* new_dir) {
-    int status;
-    
-    status = chdir(new_dir);
-    if (status == 0) {
-        return 1; // Success!
-    } else {
-        fprintf(stderr, "ERROR %d: Directory does not exist!\n", strerror(errno));
-        return -1;
-    }
+int command_redirect_to(char *command, char *parameters[]) {
+    printf("FOUND REDIRECT TO FILE ACTION\n");
 }
+
+// int command_cd(char* new_dir) {
+//     int status;
+    
+//     status = chdir(new_dir);
+//     if (status == 0) {
+//         return 1; // Success!
+//     } else {
+//         fprintf(stderr, "ERROR %d: Directory does not exist!\n", strerror(errno));
+//         return -1;
+//     }
+// }

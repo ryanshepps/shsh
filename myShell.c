@@ -23,8 +23,13 @@ int main (int argc, char *argv[]) {
         action = parse_buffer(buffer, parameters);
 
         if (strncmp(parameters[0], "exit", 4) != 0) {
-            int status = new_process(parameters[0], parameters, action);
-            if (status != 23) {
+            if (action == ' ') {
+                // DEBUGGING
+                // printf("Executing bash process...\n");
+                new_process(parameters[0], parameters, action);
+            } else {
+                // DEBUGGING
+                // printf("Executing custom process...\n");
                 new_custom_process(parameters[0], parameters, action);
             }
         } else {

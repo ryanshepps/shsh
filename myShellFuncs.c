@@ -38,12 +38,20 @@ char parse_buffer(char* buffer, char* parameters[]) {
         return_val = '<';
     }
     // Ends the parameter list with a trailing NULL pointer
-    parameters[++iterator] = NULL;
+    parameters[++iterator] = (char *)NULL;
+
+    // DEBUGGING
+    // printf("Parameters:\n");
+    // for (int i = 0; parameters[i] != NULL; i++) {
+    //     printf("%d: %s\n", i, parameters[i]);
+    // }
+
+    // printf("Action: %c\n", return_val);
 
     return return_val;
 }
 
-int new_process(char* command, char* parameters[], char action) {
+void new_process(char* command, char* parameters[], char action) {
     pid_t childpid;
     int status;
 
@@ -53,9 +61,12 @@ int new_process(char* command, char* parameters[], char action) {
         // Child process
         if (childpid == 0) {
             status = execvp(command, parameters);
+            printf("-bash: %s: command not found\n", command);
             exit(status);
         } else {
+            printf("Waiting for child to exit...\n");
             waitpid(childpid, &status, 0);
+            printf("Child exited!\n");
         }
     } else {
         perror("There was an error in forking your process :(\n");
@@ -79,23 +90,78 @@ char* cur_dir(char dir[]) {
 int new_custom_process(char* command, char* parameters[], char action) {
     if (action == '>') {
         command_redirect_to(command, parameters);
+    } else if (action == '&') {
+        command_background(command, parameters);
     }
 
     return 0;
 }
 
-int command_redirect_to(char *command, char *parameters[]) {
-    printf("FOUND REDIRECT TO FILE ACTION\n");
+void command_redirect_to(char *command, char *parameters[]) {
+    printf("executing command_redirect_to\n");
+    char *newParameterList[10];
+    char *currentParameter = parameters[0];
+    int iterator = 0;
+    
+    while (strcmp(currentParameter, ">") != 0) {
+        newParameterList[iterator] = currentParameter;
+        currentParameter = parameters[++iterator];
+    }
+
+    newParameterList[iterator] = NULL;
+
+    // DEBUGGING
+    // printf("REDIRCT_TO: Executing %s with:\n", newParameterList[0]);
+    // for (int i = 0; newParameterList[i] != NULL; i++) {
+    //     printf("%d: %s\n", i,newParameterList[i]);
+    // }
+
+    new_process(newParameterList[0], newParameterList, ' ');
 }
 
-// int command_cd(char* new_dir) {
-//     int status;
-    
-//     status = chdir(new_dir);
-//     if (status == 0) {
-//         return 1; // Success!
-//     } else {
-//         fprintf(stderr, "ERROR %d: Directory does not exist!\n", strerror(errno));
-//         return -1;
-//     }
-// }
+void command_background(char *command, char* parameters[]) {
+    // DEBUGGING
+    // printf("Executing command_background...\n");
+    pid_t childpid2;
+    int status;
+
+    // Finding & and removing it
+    for (int i = 0; parameters[i] != NULL; i++) {
+        if (strcmp(parameters[i], "&") == 0) {
+            parameters[i] = NULL;
+        }
+    }
+
+    // DEBUGGING
+    // printf("BACKGROUND: Executing %s with:\n", command);
+    // for (int i = 0; parameters[i] != NULL; i++) {
+    //     printf("%d: %s\n", i, parameters[i]);
+    // }
+
+    struct sigaction sigact = { 0 };
+    sigact.sa_flags = 0;
+    sigact.sa_handler = sig_background;
+
+    childpid2 = fork();
+
+    if (childpid2 >= 0) {
+        // Child process
+        if (childpid2 == 0) {
+            status = execvp(command, parameters);
+            printf("-bash: %s: command not found\n", command);
+            exit(status);
+        } else { // Parent process
+            sigaction(SIGCHLD, &sigact, NULL);
+        }
+    } else {
+        perror("There was an error in forking your process :(\n");
+        exit(-1);
+    }
+} 
+
+void sig_background(int signo) {
+    pid_t ppid = getppid();
+    pid_t pid = wait(&ppid);
+
+    printf("Pid: %d has exited.\n", pid);
+}

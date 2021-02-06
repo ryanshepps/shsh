@@ -64,9 +64,7 @@ void new_process(char* command, char* parameters[], char action) {
             printf("-bash: %s: command not found\n", command);
             exit(status);
         } else {
-            printf("Waiting for child to exit...\n");
             waitpid(childpid, &status, 0);
-            printf("Child exited!\n");
         }
     } else {
         perror("There was an error in forking your process :(\n");
@@ -90,6 +88,8 @@ char* cur_dir(char dir[]) {
 int new_custom_process(char* command, char* parameters[], char action) {
     if (action == '>') {
         command_redirect_to(command, parameters);
+    } else if (action == '<') {
+        command_redirect_from(command, parameters);
     } else if (action == '&') {
         command_background(command, parameters);
     }
@@ -115,8 +115,61 @@ void command_redirect_to(char *command, char *parameters[]) {
     // for (int i = 0; newParameterList[i] != NULL; i++) {
     //     printf("%d: %s\n", i,newParameterList[i]);
     // }
+    pid_t childpid;
+    int status;
 
-    new_process(newParameterList[0], newParameterList, ' ');
+    childpid = fork();
+
+    if (childpid >= 0) {
+        // Child process
+        if (childpid == 0) {
+            freopen(parameters[++iterator], "w+", stdout);
+            status = execvp(newParameterList[0], newParameterList);
+            printf("-bash: %s: command not found\n", newParameterList[0]);
+            exit(status);
+        } else {
+            waitpid(childpid, &status, 0);
+        }
+    } else {
+        perror("There was an error in forking your process :(\n");
+        exit(-1);
+    }
+}
+
+void command_redirect_from(char* command, char* parameters[]) {
+    char* newParametersList[10];
+    char* currentParameter = parameters[0];
+    int iterator = 0;
+
+    while (strcmp(currentParameter, "<") != 0) {
+        newParametersList[iterator] = currentParameter;
+        currentParameter = parameters[++iterator];
+    }
+
+    // DEBUGGING
+    printf("REDIRCT_FROM: Executing %s with:\n", newParametersList[0]);
+    for (int i = 0; newParametersList[i] != NULL; i++) {
+        printf("%d: %s\n", i,newParametersList[i]);
+    }
+    
+    pid_t childpid;
+    int status;
+
+    childpid = fork();
+
+    if (childpid >= 0) {
+        if (childpid == 0) {
+            freopen(parameters[++iterator], "r", stdin);
+            status = execvp(newParametersList[0], newParametersList);
+            printf("-bash: %s: command not found\n", newParametersList[0]);
+            exit(status);
+        } else {
+            waitpid(childpid, &status, 0);
+        }
+    } else {
+        perror("There was an error in forking your process :(\n");
+        exit(-1);
+    }
 }
 
 void command_background(char *command, char* parameters[]) {

@@ -98,32 +98,36 @@ int new_custom_process(char* command, char* parameters[], char action) {
 }
 
 void command_redirect_to(char *command, char *parameters[]) {
-    printf("executing command_redirect_to\n");
-    char *newParameterList[10];
-    char *currentParameter = parameters[0];
-    int iterator = 0;
+    char* newParameterList[10];
+    char* filename;
     
-    while (strcmp(currentParameter, ">") != 0) {
-        newParameterList[iterator] = currentParameter;
-        currentParameter = parameters[++iterator];
+    // Parsing the parameter list
+    for (int i = 0; strcmp(parameters[i], ">") != 0; i++) {
+        newParameterList[i] = parameters[i];
+        newParameterList[i + 1] = NULL; // NULL terminating the new parameter list
+        filename = parameters[i + 2]; 
     }
-
-    newParameterList[iterator] = NULL;
 
     // DEBUGGING
     // printf("REDIRCT_TO: Executing %s with:\n", newParameterList[0]);
     // for (int i = 0; newParameterList[i] != NULL; i++) {
     //     printf("%d: %s\n", i,newParameterList[i]);
     // }
+
     pid_t childpid;
     int status;
+    FILE *fp;
 
     childpid = fork();
 
     if (childpid >= 0) {
         // Child process
         if (childpid == 0) {
-            freopen(parameters[++iterator], "w+", stdout);
+            fp = freopen(filename, "w+", stdout);
+            if (fp == NULL) {
+                printf("-myShell: %s: Error writing to file\n");
+                exit(-1);
+            }
             status = execvp(newParameterList[0], newParameterList);
             printf("-bash: %s: command not found\n", newParameterList[0]);
             exit(status);
@@ -140,6 +144,7 @@ void command_redirect_from(char* command, char* parameters[]) {
     char* newParametersList[10];
     char* filename;
 
+    // Parsing the parameter list
     for (int i = 0; strcmp(parameters[i], "<") != 0; i++) {
         newParametersList[i] = parameters[i];
         newParametersList[i + 1] = NULL; // NULL terminating the parameter list
@@ -162,7 +167,7 @@ void command_redirect_from(char* command, char* parameters[]) {
         if (childpid == 0) {
             fp = freopen(filename, "r", stdin);
             if (fp == NULL) {
-                printf("-bash: %s: No such file or directory\n", filename);
+                printf("-myShell: %s: No such file or directory\n", filename);
                 exit(-1);
             }
             status = execvp(newParametersList[0], newParametersList);

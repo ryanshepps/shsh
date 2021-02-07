@@ -138,28 +138,33 @@ void command_redirect_to(char *command, char *parameters[]) {
 
 void command_redirect_from(char* command, char* parameters[]) {
     char* newParametersList[10];
-    char* currentParameter = parameters[0];
-    int iterator = 0;
+    char* filename;
 
-    while (strcmp(currentParameter, "<") != 0) {
-        newParametersList[iterator] = currentParameter;
-        currentParameter = parameters[++iterator];
+    for (int i = 0; strcmp(parameters[i], "<") != 0; i++) {
+        newParametersList[i] = parameters[i];
+        newParametersList[i + 1] = NULL; // NULL terminating the parameter list
+        filename = parameters[i + 2];
     }
 
     // DEBUGGING
-    printf("REDIRCT_FROM: Executing %s with:\n", newParametersList[0]);
-    for (int i = 0; newParametersList[i] != NULL; i++) {
-        printf("%d: %s\n", i,newParametersList[i]);
-    }
+    // printf("REDIRCT_FROM: Executing %s with:\n", newParametersList[0]);
+    // for (int i = 0; newParametersList[i] != NULL; i++) {
+    //     printf("%d: %s\n", i,newParametersList[i]);
+    // }
     
     pid_t childpid;
     int status;
+    FILE *fp;
 
     childpid = fork();
 
     if (childpid >= 0) {
         if (childpid == 0) {
-            freopen(parameters[++iterator], "r", stdin);
+            fp = freopen(filename, "r", stdin);
+            if (fp == NULL) {
+                printf("-bash: %s: No such file or directory\n", filename);
+                exit(-1);
+            }
             status = execvp(newParametersList[0], newParametersList);
             printf("-bash: %s: command not found\n", newParametersList[0]);
             exit(status);

@@ -21,6 +21,8 @@ char parse_buffer(char* buffer, char* parameters[]) {
             return_val = '>';
         } else if (strcmp(token, "<") == 0) {
             return_val = '<';
+        } else if (strcmp(token, "cd") == 0) {
+            return_val = 'c';
         }
 
         token = strtok(NULL, " ");
@@ -70,19 +72,6 @@ void new_process(char* command, char* parameters[], char action) {
         perror("There was an error in forking your process :(\n");
         exit(-1);
     }
-}
-
-char* cur_dir(char dir[]) {
-    char* ret_val;
-
-    ret_val = getcwd(dir, PATH_MAX);
-    if (ret_val == NULL) {
-        fprintf(stderr, "ERROR %d: Something went wrong with getting the current working director\n", strerror(errno));
-        return NULL;
-    }
-
-    strcat(dir, "/");
-    return dir;
 }
 
 void command_redirect_to(char *command, char *parameters[]) {
@@ -219,3 +208,42 @@ void command_background(char *command, char* parameters[], bgprocess* processes)
         exit(-1);
     }
 } 
+
+void command_chdir(char* parameters[]) {
+    int ret = chdir(parameters[1]);
+    if (ret = -1) {
+        fprintf(stderr, "ERROR %d: Directory does not exist!\n", strerror(errno));
+    }
+}
+
+/**************************** HELPER FUNCTIONS *******************************/
+
+char* cur_dir(char dir[]) {
+    char* ret_val;
+
+    ret_val = getcwd(dir, PATH_MAX);
+    if (ret_val == NULL) {
+        fprintf(stderr, "ERROR %d: Something went wrong with getting the current working director\n", strerror(errno));
+        return NULL;
+    }
+
+    strcat(dir, "/");
+    return dir;
+}
+
+void reap_processes(bgprocess processes[MAXPROCESSES]) {
+        int status;
+        // Displaying background processes when they have completed
+        pid_t pid = waitpid(-1, &status, WNOHANG);
+        for (int i = 0; i < MAXPROCESSES; i++) {
+            if (processes[i].pid == pid && pid != -1 && pid != 0) {
+                printf("[%d]+  Done\t\t\t%s\n", processes[i].id, processes[i].command);
+                
+                // Clean up processes struct
+                processes[i].pid = 0;
+                processes[i].id = 0;
+                strcpy(processes[i].command, " ");
+                break;
+            }
+        }
+}

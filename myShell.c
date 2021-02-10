@@ -8,6 +8,7 @@
 #include <string.h>
 #include <limits.h>
 #include <signal.h>
+#include <argp.h>
 #include "myShellFuncs.h"
 
 int main (int argc, char *argv[]) {
@@ -18,6 +19,9 @@ int main (int argc, char *argv[]) {
     int status;
     bgprocess processes[MAXPROCESSES] = { 0 };
 
+    // Creating history and profile files
+
+
     while (1) {
         // DEBUGGING
         // Printing the processes struct array to make sure all is good
@@ -25,18 +29,7 @@ int main (int argc, char *argv[]) {
         //     printf("PROCESS %d:\npid: %d\ncommand: %s\n\n", processes[i].id, processes[i].pid, processes[i].command);
         // }
 
-        // Displaying background processes when they have completed
-        pid_t pid = waitpid(-1, &status, WNOHANG);
-        for (int i = 0; i < MAXPROCESSES; i++) {
-            if (processes[i].pid == pid && pid != -1 && pid != 0) {
-                printf("[%d]+  Done\t\t\t%s\n", processes[i].id, processes[i].command);
-                // Clean up processes struct
-                processes[i].pid = 0;
-                processes[i].id = 0;
-                strcpy(processes[i].command, " ");
-                break;
-            }
-        }
+        reap_processes(processes);
 
         printf("%s> ", cur_dir(dir));
 
@@ -58,6 +51,8 @@ int main (int argc, char *argv[]) {
                     command_redirect_from(parameters[0], parameters);
                 } else if (action == '&') {
                     command_background(parameters[0], parameters, processes);
+                } else if (action == 'c') {
+                    command_chdir(parameters);
                 }
             }
         } else {

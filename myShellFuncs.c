@@ -85,18 +85,6 @@ char* cur_dir(char dir[]) {
     return dir;
 }
 
-int new_custom_process(char* command, char* parameters[], char action) {
-    if (action == '>') {
-        command_redirect_to(command, parameters);
-    } else if (action == '<') {
-        command_redirect_from(command, parameters);
-    } else if (action == '&') {
-        command_background(command, parameters);
-    }
-
-    return 0;
-}
-
 void command_redirect_to(char *command, char *parameters[]) {
     char* newParameterList[10];
     char* filename;
@@ -182,10 +170,10 @@ void command_redirect_from(char* command, char* parameters[]) {
     }
 }
 
-void command_background(char *command, char* parameters[]) {
+void command_background(char *command, char* parameters[], bgprocess* processes) {
     // DEBUGGING
     // printf("Executing command_background...\n");
-    pid_t childpid2;
+    pid_t childpid;
     int status;
 
     // Finding & and removing it
@@ -195,36 +183,39 @@ void command_background(char *command, char* parameters[]) {
         }
     }
 
+    // Creating a new background process
+    int iterator = 0;
+    while (processes[iterator].id != 0) {
+        iterator++;
+    }
+    processes[iterator].id = iterator + 1;
+
+    char entire_command[1024] = "";
+    for (int i = 0; parameters[i] != NULL; i++) {
+        strcat(entire_command, parameters[i]);
+        strcat(entire_command, " ");
+    }
+    strcpy(processes[iterator].command, entire_command);
+
     // DEBUGGING
     // printf("BACKGROUND: Executing %s with:\n", command);
     // for (int i = 0; parameters[i] != NULL; i++) {
     //     printf("%d: %s\n", i, parameters[i]);
     // }
+    childpid = fork();
 
-    struct sigaction sigact = { 0 };
-    sigact.sa_flags = 0;
-    sigact.sa_handler = sig_background;
-
-    childpid2 = fork();
-
-    if (childpid2 >= 0) {
+    if (childpid >= 0) {
         // Child process
-        if (childpid2 == 0) {
+        if (childpid == 0) {
             status = execvp(command, parameters);
             printf("-bash: %s: command not found\n", command);
             exit(status);
-        } else { // Parent process
-            sigaction(SIGCHLD, &sigact, NULL);
+        } else {
+            printf("[%d] %d\n", iterator + 1, childpid);
+            processes[iterator].pid = childpid;
         }
     } else {
         perror("There was an error in forking your process :(\n");
         exit(-1);
     }
 } 
-
-void sig_background(int signo) {
-    pid_t ppid = getppid();
-    pid_t pid = wait(&ppid);
-
-    printf("Pid: %d has exited.\n", pid);
-}

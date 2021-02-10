@@ -4,10 +4,10 @@
 - [x] Internal shell command "exit" which terminates the shell
 - [x] A command with no arguments
 - [x] A command with arguments
-- [ ] A command, with or without arguments, executed in the background using &
+- [x] A command, with or without arguments, executed in the background using &
 #### Set 2: 
-- [ ] A command, with or without arguments, whose output is redirected to a file
-- [ ] A command, with or without arguments, whose input is redirected from a file
+- [x] A command, with or without arguments, whose output is redirected to a file
+- [x] A command, with or without arguments, whose input is redirected from a file
 - [ ] A command, with or without arguments whose output is piped to the input of another command
 #### Set 3: 
 - [ ] Limited shell environment variables
@@ -18,7 +18,7 @@
 - [ ] Implementing the buiiltin functions:
   - [ ] export
   - [ ] history
-  - [/] cd
+  - [x] cd
 ## Functions
 ### int **new_custom_process**(char\* command, char\* parameters[])
 **Parameters:**

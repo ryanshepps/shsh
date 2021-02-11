@@ -16,8 +16,11 @@
     void command_redirect_from(char *command, char* parameters[]);
     void command_background(char *command, char* parameters[], bgprocess* processes);
     void sig_background(int signo);
+    void command_history(int* num_commands, char* parameters[], bgprocess* processes);
 
     /* Helper Functions */
     char* cur_dir(char dir[]);
     void reap_processes(bgprocess processes[MAXPROCESSES]);
+    void append_to_history(int* num_commands, char* buffer[]);
+    int get_current_num_commands();
 #endif

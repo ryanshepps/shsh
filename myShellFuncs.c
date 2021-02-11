@@ -23,9 +23,14 @@ char parse_buffer(char* buffer, char* parameters[]) {
             return_val = '<';
         } else if (strcmp(token, "cd") == 0) {
             return_val = 'c';
+        } else if (strcmp(token, "history") == 0 || strcmp(token, "history\n") == 0) {
+            return_val = 'h';
         }
 
         token = strtok(NULL, " ");
+        while (token == " ") {
+            token = strtok(NULL, " ");
+        }
     }
     
     // Removes the trailing \n
@@ -212,12 +217,77 @@ void command_background(char *command, char* parameters[], bgprocess* processes)
 void command_chdir(char* parameters[]) {
     int ret = chdir(parameters[1]);
     if (ret = -1) {
-        fprintf(stderr, "ERROR %d: Directory does not exist!\n", strerror(errno));
+        if (errno == 2) {
+            fprintf(stderr, "ERROR %d: Directory does not exist!\n", errno);
+        }
     }
 }
 
-/**************************** HELPER FUNCTIONS *******************************/
+void command_history(int* num_commands, char* parameters[], bgprocess* processes) {
+    if (parameters[1] == NULL) {
+        FILE* fp = fopen(".CIS3110_history", "r");
+        char c;
+        while ((c = getc(fp)) != EOF) {
+            printf("%c", c);
+        }
+        fclose(fp);
+     } else if (strcmp(parameters[1], "-c") == 0) {
+        FILE* fp = fopen(".CIS3110_history", "w+");
+        fclose(fp);
+        *num_commands = 1;
+     } else if (atoi(parameters[1]) != 0) {
+        FILE* fp = fopen(".CIS3110_history", "r");
 
+        int index = atoi(parameters[1]);
+
+        char command[1024];
+        while (fgets(command, 1024, fp) != NULL) {
+            if (atoi(command) == index) {
+                char* parameters[10];
+                char action = parse_buffer(command, parameters);
+
+                // Moving everything to the left (To write over the first parameter which is a number)
+                for (int i = 0; parameters[i] != NULL; i++) {
+                    parameters[i] = parameters[i + 1];
+                }
+
+                // DEBUGGING
+                // printf("BACKGROUND: Executing %s with:\n", parameters[0]);
+                // for (int i = 0; parameters[i] != NULL; i++) {
+                //     printf("%d: %s\n", i, parameters[i]);
+                // }
+                
+                if (action == ' ') {
+                    // DEBUGGING
+                    // printf("Executing bash process...\n");
+                    new_process(parameters[0], parameters, action);
+                } else {
+                    // DEBUGGING
+                    // printf("Executing custom process...\n");
+                    if (action == '>') {
+                        command_redirect_to(parameters[0], parameters);
+                    } else if (action == '<') {
+                        command_redirect_from(parameters[0], parameters);
+                    } else if (action == '&') {
+                        command_background(parameters[0], parameters, processes);
+                    } else if (action == 'c') {
+                        command_chdir(parameters);
+                    } else if (action == 'h') {
+                        command_history(num_commands, parameters, processes);
+                    }
+                }
+                fclose(fp);
+                return;
+            }
+        } printf("Index %d does not exist in .CIS3110_history\n");
+        
+        fclose(fp);
+     } else {
+         printf("-myShell: %s: Unrecognized string\n", parameters[1]);
+     }
+}
+
+/**************************** HELPER FUNCTIONS *******************************/
 char* cur_dir(char dir[]) {
     char* ret_val;
 
@@ -246,4 +316,44 @@ void reap_processes(bgprocess processes[MAXPROCESSES]) {
                 break;
             }
         }
+}
+
+void append_to_history(int* num_commands, char* buffer[]) {
+    FILE* history_file = fopen(".CIS3110_history", "a+");
+    if (history_file == NULL) {
+        fprintf(stderr, "There was an error in opening the .CIS3110_history file\n");
+        return;
+    }
+    
+    char string_to_append[1024] = "";
+    sprintf(string_to_append, " %d  ", *num_commands);
+    for (int i = 0; buffer[i] != NULL; i++) {
+        strcat(string_to_append, buffer[i]);
+        strcat(string_to_append, " ");
+    } 
+    string_to_append[strlen(string_to_append) - 1] = '\n';
+
+    fprintf(history_file, string_to_append);
+    fclose(history_file);
+
+    (*num_commands)++;
+}
+
+int get_current_num_commands() {
+    FILE* fp = fopen(".CIS3110_history", "r");
+    if (fp == NULL) {
+        fp = fopen(".CIS3110_history", "w+");
+        if (fp == NULL) {
+            fprintf(stderr, "There was an error in opening the .CIS3110_history file\n");
+            return 0;
+        }
+    }
+    char str_curr_num[1024];
+    int curr_num;
+    
+    while (fgets(str_curr_num, 1024, fp) != NULL) {
+        curr_num = atoi(str_curr_num);
+    }
+    
+    return curr_num;
 }

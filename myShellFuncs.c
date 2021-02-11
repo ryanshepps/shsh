@@ -215,28 +215,36 @@ void command_background(char *command, char* parameters[], bgprocess* processes)
 } 
 
 void command_chdir(char* parameters[]) {
-    int ret = chdir(parameters[1]);
-    if (ret = -1) {
-        if (errno == 2) {
-            fprintf(stderr, "ERROR %d: Directory does not exist!\n", errno);
+    int ret;
+    if (strcmp(parameters[1], "~") == 0) {
+        ret = chdir(getenv("HOME"));
+    } else {
+        ret = chdir(parameters[1]);
+        if (ret = -1) {
+            if (errno == 2) {
+                fprintf(stderr, "ERROR %d: Directory does not exist!\n", errno);
+            }
         }
     }
 }
 
 void command_history(int* num_commands, char* parameters[], bgprocess* processes) {
+    char hist_file_location[1024];
+    strcpy(hist_file_location, getenv("HOME"));
+    hist_file_location[strlen(hist_file_location) - 1] = '\0';
     if (parameters[1] == NULL) {
-        FILE* fp = fopen(".CIS3110_history", "r");
+        FILE* fp = fopen(hist_file_location, "r");
         char c;
         while ((c = getc(fp)) != EOF) {
             printf("%c", c);
         }
         fclose(fp);
      } else if (strcmp(parameters[1], "-c") == 0) {
-        FILE* fp = fopen(".CIS3110_history", "w+");
+        FILE* fp = fopen(hist_file_location, "w+");
         fclose(fp);
         *num_commands = 1;
      } else if (atoi(parameters[1]) != 0) {
-        FILE* fp = fopen(".CIS3110_history", "r");
+        FILE* fp = fopen(hist_file_location, "r");
 
         int index = atoi(parameters[1]);
 
@@ -290,6 +298,45 @@ void command_history(int* num_commands, char* parameters[], bgprocess* processes
      } else {
          printf("-myShell: %s: Unrecognized string\n", parameters[1]);
      }
+}
+
+void initialize_profile() {
+    char home[1024];
+    char path[1024];
+    char hist[1024];
+
+    FILE *fp = fopen(".CIS3110_profile", "r");
+    // If it doesn't exist, create the profile
+    if (fp == NULL) {
+        fp = fopen(".CIS3110_profile", "w+");
+        if (fp == NULL) {
+            fprintf(stderr, "There was an error in opening the .CIS3110_history file\n");
+            return;
+        }
+        
+        char dir[PATH_MAX];
+        sprintf(home, "HOME=%s", cur_dir(dir));
+        putenv(home);
+
+        sprintf(path, "PATH=/usr/bin:/bin:%s", getenv("HOME"));
+        putenv(path);
+
+        sprintf(hist, "HISTFILE=%s", getenv("HOME"));
+        putenv(hist);
+
+        fprintf(fp, "%s%s%s", home, path, hist);
+    } else {
+        fgets(home, 1024, fp);
+        putenv(home);
+
+        fgets(path, 1024, fp);
+        putenv(path);
+
+        fgets(hist, 1024, fp);
+        putenv(hist);
+    }
+
+    fclose(fp);
 }
 
 /**************************** HELPER FUNCTIONS *******************************/

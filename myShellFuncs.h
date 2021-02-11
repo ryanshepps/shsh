@@ -17,6 +17,7 @@
     void command_background(char *command, char* parameters[], bgprocess* processes);
     void sig_background(int signo);
     void command_history(int* num_commands, char* parameters[], bgprocess* processes);
+    void initialize_profile();
 
     /* Helper Functions */
     char* cur_dir(char dir[]);

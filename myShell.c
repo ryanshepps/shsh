@@ -22,6 +22,9 @@ int main (int argc, char *argv[]) {
     int num_commands = get_current_num_commands() + 1;
     int* ptr_num_commands = &num_commands;
 
+    // Initialize profile stuff
+    initialize_profile();
+
     char* intro = "\n"
                   "Ryan's\n"
                   "    ___  _ _________   ___  _ _____ __  __\n"
@@ -36,8 +39,6 @@ int main (int argc, char *argv[]) {
                   "I can clear anything up or do something to make your marking easier.\n";
 
     printf("%s\n", intro);
-
-
 
     while (1) {
         // DEBUGGING
@@ -57,6 +58,7 @@ int main (int argc, char *argv[]) {
         append_to_history(ptr_num_commands, parameters);
 
         if (strncmp(parameters[0], "exit", 4) != 0) {
+            printf("HOME: %s\n", getenv("HOME"));
             if (action == ' ') {
                 // DEBUGGING
                 // printf("Executing bash process...\n");

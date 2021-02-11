@@ -23,3 +23,6 @@
 ## Limitations
 Redirecting
 - Cannot be done with custom commands
+
+Background Processes
+- Cannot be done with custom commands

@@ -17,7 +17,7 @@
   - [ ] $HOME
 - [ ] Implementing the buiiltin functions:
   - [ ] export
-  - [ ] history
+  - [x] history
   - [x] cd
 
 ## Limitations

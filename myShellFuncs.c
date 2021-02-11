@@ -257,6 +257,11 @@ void command_history(int* num_commands, char* parameters[], bgprocess* processes
                 //     printf("%d: %s\n", i, parameters[i]);
                 // }
                 
+                if (strncmp(parameters[0], "exit", 4) == 0) {
+                    printf("myShell terminating...\n\n[Process completed]\n");
+                    exit(0);
+                }
+
                 if (action == ' ') {
                     // DEBUGGING
                     // printf("Executing bash process...\n");

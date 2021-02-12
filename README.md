@@ -10,13 +10,13 @@
 - [x] A command, with or without arguments, whose input is redirected from a file
 - [ ] A command, with or without arguments whose output is piped to the input of another command
 #### Set 3: 
-- [ ] Limited shell environment variables
-- [ ] Reading in the profile file on initialization of the shell and executing any commands inside
-  - [ ] $PATH
-  - [ ] $HISTFILE
-  - [ ] $HOME
-- [ ] Implementing the buiiltin functions:
-  - [ ] export
+- [x] Limited shell environment variables
+- [x] Reading in the profile file on initialization of the shell and executing any commands inside
+  - [x] $PATH
+  - [x] $HISTFILE
+  - [x] $HOME
+- [x] Implementing the buiiltin functions:
+  - [x] export
   - [x] history
   - [x] cd
 
@@ -26,3 +26,6 @@ Redirecting
 
 Background Processes
 - Cannot be done with custom commands
+
+Piping
+- Non-existent

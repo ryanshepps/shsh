@@ -25,6 +25,10 @@ char parse_buffer(char* buffer, char* parameters[]) {
             return_val = 'c';
         } else if (strcmp(token, "history") == 0 || strcmp(token, "history\n") == 0) {
             return_val = 'h';
+        } else if (strcmp(token, "echo") == 0) {
+            return_val = 'e';
+        } else if (strcmp(token, "export") == 0) {
+            return_val = 'x';
         }
 
         token = strtok(NULL, " ");
@@ -230,8 +234,8 @@ void command_chdir(char* parameters[]) {
 
 void command_history(int* num_commands, char* parameters[], bgprocess* processes) {
     char hist_file_location[1024];
-    strcpy(hist_file_location, getenv("HOME"));
-    hist_file_location[strlen(hist_file_location) - 1] = '\0';
+    strcpy(hist_file_location, getenv("HISTFILE"));
+    hist_file_location[strlen(hist_file_location)] = '\0';
     if (parameters[1] == NULL) {
         FILE* fp = fopen(hist_file_location, "r");
         char c;
@@ -287,6 +291,8 @@ void command_history(int* num_commands, char* parameters[], bgprocess* processes
                         command_chdir(parameters);
                     } else if (action == 'h') {
                         command_history(num_commands, parameters, processes);
+                    } else if (action == 'e') {
+                        command_echo(parameters);
                     }
                 }
                 fclose(fp);
@@ -300,40 +306,68 @@ void command_history(int* num_commands, char* parameters[], bgprocess* processes
      }
 }
 
-void initialize_profile() {
+void initialize_profile(bgprocess* processes) {
+    char buffer[1024];
     char home[1024];
     char path[1024];
-    char hist[1024];
+    char histfile[1024];
 
     FILE *fp = fopen(".CIS3110_profile", "r");
     // If it doesn't exist, create the profile
     if (fp == NULL) {
         fp = fopen(".CIS3110_profile", "w+");
         if (fp == NULL) {
-            fprintf(stderr, "There was an error in opening the .CIS3110_history file\n");
+            fprintf(stderr, "There was an error in opening the .CIS3110_profile file\n");
             return;
         }
         
         char dir[PATH_MAX];
         sprintf(home, "HOME=%s", cur_dir(dir));
+        fprintf(fp, "export %s\n", home);
         putenv(home);
 
         sprintf(path, "PATH=/usr/bin:/bin:%s", getenv("HOME"));
+        fprintf(fp, "export %s\n", path);
         putenv(path);
 
-        sprintf(hist, "HISTFILE=%s", getenv("HOME"));
-        putenv(hist);
-
-        fprintf(fp, "%s%s%s", home, path, hist);
+        sprintf(histfile, "HISTFILE=%s.CIS3110_history", getenv("HOME"));
+        fprintf(fp, "export %s\n", histfile);
+        putenv(histfile);
     } else {
-        fgets(home, 1024, fp);
-        putenv(home);
+        char action;
+        char *parameters[10];
 
-        fgets(path, 1024, fp);
-        putenv(path);
-
-        fgets(hist, 1024, fp);
-        putenv(hist);
+        while (fgets(buffer, 1024, fp) != NULL){
+            action = parse_buffer(buffer, parameters);
+            if (strncmp(parameters[0], "exit", 4) != 0) {
+                if (action == ' ') {
+                    // DEBUGGING
+                    // printf("Executing bash process...\n");
+                    new_process(parameters[0], parameters, action);
+                } else {
+                    // DEBUGGING
+                    // printf("Executing custom process...\n");
+                    if (action == '>') {
+                        command_redirect_to(parameters[0], parameters);
+                    } else if (action == '<') {
+                        command_redirect_from(parameters[0], parameters);
+                    } else if (action == '&') {
+                        command_background(parameters[0], parameters, processes);
+                    } else if (action == 'c') {
+                        command_chdir(parameters);
+                    } else if (action == 'h') {
+                        command_history(0, parameters, processes);
+                    } else if (action == 'e') {
+                        command_echo(parameters);
+                    } else if (action == 'x') {
+                        command_export(parameters);
+                    }
+                }
+            } else {
+                printf("myShell terminating...\n\n[Process completed]\n");
+                exit(0);
+            }
+        }
     }
 
     fclose(fp);
@@ -371,7 +405,7 @@ void reap_processes(bgprocess processes[MAXPROCESSES]) {
 }
 
 void append_to_history(int* num_commands, char* buffer[]) {
-    FILE* history_file = fopen(".CIS3110_history", "a+");
+    FILE* history_file = fopen(getenv("HISTFILE"), "a+");
     if (history_file == NULL) {
         fprintf(stderr, "There was an error in opening the .CIS3110_history file\n");
         return;
@@ -392,9 +426,9 @@ void append_to_history(int* num_commands, char* buffer[]) {
 }
 
 int get_current_num_commands() {
-    FILE* fp = fopen(".CIS3110_history", "r");
+    FILE* fp = fopen(getenv("HISTFILE"), "r");
     if (fp == NULL) {
-        fp = fopen(".CIS3110_history", "w+");
+        fp = fopen(getenv("HISTFILE"), "w+");
         if (fp == NULL) {
             fprintf(stderr, "There was an error in opening the .CIS3110_history file\n");
             return 0;
@@ -408,4 +442,41 @@ int get_current_num_commands() {
     }
     
     return curr_num;
+}
+
+void command_echo(char* parameters[]) {
+    if (strcmp(parameters[1], "$HOME") == 0) {
+        if (getenv("HOME") == NULL) {
+            printf("There is an error with retreiving this environment variable\n");
+            return;
+        }
+        printf("%s\n", getenv("HOME"));
+    } else if (strcmp(parameters[1], "$PATH") == 0) {
+        if (getenv("PATH") == NULL) {
+            printf("There is an error with retreiving this environment variable\n");
+            return;
+        }
+        printf("%s\n", getenv("PATH"));
+    } else if (strcmp(parameters[1], "$HISTFILE") == 0) {
+        if (getenv("HISTFILE") == NULL) {
+            printf("There is an error with retreiving this environment variable\n");
+            return;
+        }
+        printf("%s\n", getenv("HISTFILE"));
+    } else {
+        new_process(parameters[0], parameters, ' ');
+    }
+}
+
+void command_export(char* parameters[]) {
+    if (parameters[1] == NULL) {
+        printf("ERROR: Must have a second argument\n");
+        return;
+    }
+
+    char* newEnvironVar = malloc(sizeof(char) * 1024);
+    strcpy(newEnvironVar, parameters[1]);
+    if (putenv(newEnvironVar) != 0) {
+        printf("Error setting your environment variable!\n");
+    }
 }

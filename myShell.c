@@ -18,12 +18,12 @@ int main (int argc, char *argv[]) {
     int status;
     bgprocess processes[MAXPROCESSES] = { 0 };
 
+    // Initialize profile stuff
+    initialize_profile(processes);
+
     // History file stuff
     int num_commands = get_current_num_commands() + 1;
     int* ptr_num_commands = &num_commands;
-
-    // Initialize profile stuff
-    initialize_profile();
 
     char* intro = "\n"
                   "Ryan's\n"
@@ -58,7 +58,6 @@ int main (int argc, char *argv[]) {
         append_to_history(ptr_num_commands, parameters);
 
         if (strncmp(parameters[0], "exit", 4) != 0) {
-            printf("HOME: %s\n", getenv("HOME"));
             if (action == ' ') {
                 // DEBUGGING
                 // printf("Executing bash process...\n");
@@ -76,6 +75,10 @@ int main (int argc, char *argv[]) {
                     command_chdir(parameters);
                 } else if (action == 'h') {
                     command_history(ptr_num_commands, parameters, processes);
+                } else if (action == 'e') {
+                    command_echo(parameters);
+                } else if (action == 'x') {
+                    command_export(parameters);
                 }
             }
         } else {

@@ -308,9 +308,9 @@ void command_history(int* num_commands, char* parameters[], bgprocess* processes
 
 void initialize_profile(bgprocess* processes) {
     char buffer[1024];
-    char home[1024];
-    char path[1024];
-    char histfile[1024];
+    char* home = malloc(sizeof(char) * 1024);
+    char* path = malloc(sizeof(char) * 1024);
+    char* histfile = malloc(sizeof(char) * 1024);
 
     FILE *fp = fopen(".CIS3110_profile", "r");
     // If it doesn't exist, create the profile
@@ -324,15 +324,26 @@ void initialize_profile(bgprocess* processes) {
         char dir[PATH_MAX];
         sprintf(home, "HOME=%s", cur_dir(dir));
         fprintf(fp, "export %s\n", home);
-        putenv(home);
+        if (putenv(home) != 0) {
+            printf("There was an error setting your home directory!\n");
+            exit(1);
+        }
 
         sprintf(path, "PATH=/usr/bin:/bin:%s", getenv("HOME"));
         fprintf(fp, "export %s\n", path);
-        putenv(path);
+        printf("PATH: %s\n", path);
+        if (putenv(path) != 0) {
+            printf("There was an error setting your home directory!\n");
+            exit(1);
+        }
 
         sprintf(histfile, "HISTFILE=%s.CIS3110_history", getenv("HOME"));
         fprintf(fp, "export %s\n", histfile);
-        putenv(histfile);
+        printf("HISTFILE: %s\n", histfile);
+        if (putenv(path) != 0) {
+            printf("There was an error setting your home directory!\n");
+            exit(1);
+        }
     } else {
         char action;
         char *parameters[10];

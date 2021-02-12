@@ -433,6 +433,8 @@ int get_current_num_commands() {
             fprintf(stderr, "There was an error in opening the .CIS3110_history file\n");
             return 0;
         }
+
+        return 0;
     }
     char str_curr_num[1024];
     int curr_num;

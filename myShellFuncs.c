@@ -331,7 +331,6 @@ void initialize_profile(bgprocess* processes) {
 
         sprintf(path, "PATH=/usr/bin:/bin:%s", getenv("HOME"));
         fprintf(fp, "export %s\n", path);
-        printf("PATH: %s\n", path);
         if (putenv(path) != 0) {
             printf("There was an error setting your home directory!\n");
             exit(1);
@@ -339,7 +338,6 @@ void initialize_profile(bgprocess* processes) {
 
         sprintf(histfile, "HISTFILE=%s.CIS3110_history", getenv("HOME"));
         fprintf(fp, "export %s\n", histfile);
-        printf("HISTFILE: %s\n", histfile);
         if (putenv(path) != 0) {
             printf("There was an error setting your home directory!\n");
             exit(1);

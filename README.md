@@ -1,4 +1,4 @@
-# A1
+# Shit Shell (SHSH)
 ## Features:
 #### Set 1:
 - [x] Internal shell command "exit" which terminates the shell
